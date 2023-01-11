@@ -1,0 +1,157 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Группы
+{% endblock %}
+
+{% block head %}
+<script src="/static/scripts.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="d-flex">
+            <div class="d-flex align-items-center">
+                <label for="group-select" class="me-2"><b>Группа</b></label>
+                <select class="form-select" id="group-select">
+                    {% for idx, group in enumerate(groups) %}
+                        <option
+                            value="{{ group.id_group }}"
+                            {% if 'group_id' in request.values and group.id_group == int(request.values.get('group_id')) %}
+                            selected
+                            {% elif group_id not in request.values and idx == 0 %}
+                            selected
+                            {% endif %}>
+                            {{ group.group_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ms-auto">
+                {% if session['user']['is_admin'] %}
+                    <a class="btn btn-secondary" href="/groups/create">
+                        Создать группу
+                    </a>
+                {% endif %}
+                <button class="btn btn-success" id="add-student-button">
+                    Добавить студента
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-3 table-row py-1">
+        <b class="col col-5">Студент</b>
+        <b class="col col-3">Телефон</b>
+        <b class="col col-2">Посещено занятий</b>
+        <b class="col col-2"></b>
+    </div>
+    {% for student in students %}
+    <div class="row table-row student-row py-1" id="{{ student['id_student'] }}">
+        <div class="col col-5">{{ student.FIO_student }}</div>
+        <div class="col col-3">{{ student.telnumber_student }}</div>
+        <div class="col col-2">{{ student.presence_count }}</div>
+        <div class="col col-2 d-flex justify-content-end align-items-center">
+            <button class="btn btn-sm btn-outline-danger delete-student-button">
+                Удалить
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="modal-add-student" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Добавить студента</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center">
+                    <select class="form-select" id='modal-student-select'></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отменить</button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-bs-dismiss="modal"
+                    id="modal-button-add-student">
+                    Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+const groupSelect = document.querySelector('#group-select');
+const addStudentButton = document.querySelector('#add-student-button');
+const addStudentModal = new bootstrap.Modal('#modal-add-student');
+const modalStudentSelect = document.querySelector('#modal-student-select');
+const modalButtonAddStudent = document.querySelector('#modal-button-add-student');
+const deleteStudentButtons = document.querySelectorAll('.delete-student-button');
+
+for (const button of deleteStudentButtons) {
+    button.addEventListener('click', async function () {
+        const student_id = button.parentNode.parentNode.id;
+        await fetch('/delete_student_from_group', {
+            method: 'POST',
+            mode: 'same-origin',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id }),
+        })
+        location.reload();
+    });
+}
+
+modalButtonAddStudent.addEventListener('click', async function () {
+    const student_id = modalStudentSelect.value;
+    const group_id = groupSelect.value;
+    await fetch('/add_student_to_group', {
+        method: 'POST',
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id, group_id }),
+    })
+    location.reload();
+});
+
+function createOption(value, content, selected = false) {
+    const option = document.createElement('option');
+    option.innerText = content;
+    option.setAttribute('value', value);
+    option.selected = selected;
+    return option;
+}
+
+addStudentButton.addEventListener('click', async function () {
+    const excludeIds = Array.from(
+        document.querySelectorAll('.student-row')
+    ).map(row => row.id).join(',');
+    const response = await fetch(`/all_students?exclude=${excludeIds}`);
+    const result = await response.json();
+
+    for (const student of result.students) {
+        const option = createOption(student.id_student, student.student);
+        modalStudentSelect.append(option);
+    }
+
+    addStudentModal.show();
+});
+
+groupSelect.addEventListener('change', function () {
+    pushQueryParams({ group_id: this.value })
+});
+{% endblock %}
+
+{% block style %}
+.table-row {
+    border-bottom: 1px solid lightgray;
+}
+{% endblock %}

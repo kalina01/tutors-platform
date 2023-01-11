@@ -1,0 +1,76 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Создать курс
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4 d-flex">
+        <h4>Создать курс</h4>
+        <a href="/teachers" class="btn btn-secondary ms-auto">Назад</a>
+    </div>
+
+    <form method="post" class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="name">Название</label>
+                <input name="name" class="form-control" id="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="room">Аудитория</label>
+                <input name="room" class="form-control" id="room" required>
+            </div>
+            <div class="mb-3">
+                <label for="start-date">Дата начала</label>
+                <input type="date" name="start_date" class="form-control" id="start-date" required>
+            </div>
+            <div class="mb-3">
+                <label for="week-amount">Длительность, недель</label>
+                <input type="number" name="week_amount" class="form-control" id="week-amount" required>
+            </div>
+            <div class="mb-3">
+                <label for="time">Время начала занятий</label>
+                <input type="time" name="time" class="form-control" id="time" required>
+            </div>
+            <div class="mb-3">
+                <label for="teacher">Преподаватель</label>
+                <select class="form-select" id="teacher" name="teacher_id" required>
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.id_teacher }}">{{ teacher.FIO_teacher }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="groups">Группы</label>
+                <select class="form-select" multiple id="groups" name="group_ids" required>
+                    {% for group in groups %}
+                        <option value="{{ group.id_group }}">{{ group.group_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="days-of-week">Дни недели</label>
+                <select class="form-select" multiple id="days-of-week" name="days_of_week" required>
+                    <option value="1">Понедельник</option>
+                    <option value="2">Вторник</option>
+                    <option value="3">Среда</option>
+                    <option value="4">Четверг</option>
+                    <option value="5">Пятница</option>
+                    <option value="6">Суббота</option>
+                    <option value="0">Воскресенье</option>
+                  </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+{% endblock %}
+
+{% block style %}
+{% endblock %}

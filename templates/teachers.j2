@@ -1,0 +1,45 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Преподаватели
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex">
+        <h4>Преподаватели</h4>
+        <a href='/teachers/create' class="btn btn-success ms-auto" id="add-teacher-button">
+            Добавить преподавателя
+        </a>
+    </div>
+    <div class="row table-row py-1 mt-3">
+        <b class="col col-5">Преподаватель</b>
+        <b class="col col-5">Телефон</b>
+        <b class="col col-2 text-end">Администратор</b>
+    </div>
+    {% for teacher in teachers %}
+        <div class="row table-row py-1">
+            <div class="col col-5">{{ teacher.FIO_teacher }}</div>
+            <div class="col col-5">{{ teacher.telnumber_teacher }}</div>
+            <div class="col col-2 d-flex justify-content-end">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    onclick="return false;"
+                    {% if teacher.is_admin %}x
+                    checked
+                    {% endif %}>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block script %}
+{% endblock %}
+
+{% block style %}
+.table-row {
+    border-bottom: 1px solid lightgray;
+}
+{% endblock %}

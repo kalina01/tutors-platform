@@ -1,0 +1,295 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Расписание
+{% endblock %}
+
+{% block head %}
+<script src="/static/scripts.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="d-flex align-items-center">
+            <h4>
+                {{ monday.strftime('%d %b') }} - {{ saturday.strftime('%d %b') }}
+                {{ monday.strftime('%Y') }} г.
+            </h4>
+            <div class="ms-auto d-flex">
+                <div class="me-3 ms-auto">
+                    <select class="form-select" id="teacher-select">
+                        {% for teacher in teachers %}
+                            <option
+                                value="{{ teacher.id_teacher }}"
+                                {% if teacher.id_teacher == int(request.values.get('teacher_id', session['user']['id_teacher'])) %}
+                                selected
+                                {% endif %}>
+                                {{ teacher.FIO_teacher }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="ms-auto">
+                    <div class="input-group me-auto">
+                        <button class="btn btn-secondary" type="button" id="prev">←</button>
+                        <button class="btn btn-secondary" type="button" id="today">Сегодня</button>
+                        <button class="btn btn-secondary" type="button" id="next">→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row schedule-header mt-3">
+    {% for idx in range(7) %}
+        <b class="col py-1 text-center">
+            {{ (monday + timedelta(days=idx)).strftime('%a, %d %b') }}
+        </b>
+    {% endfor %}
+</div>
+<div class="row schedule-table">
+    {% for idx in list(range(1, 7)) + [0] %}
+        <div class="col px-2">
+        {% for class in data %}
+            {% if int(class['weekday']) == idx %}
+                <div class="card class mt-2" id="{{ class['class_id'] }}">
+                    <div class="card-header d-flex">
+                        <span>
+                            {{ strptime(class['date'], '%Y-%m-%d %H:%M:%S').strftime('%H:%M') }}
+                        </span>
+                        <span class="ms-auto">
+                            {{ class['room'] }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <b>{{ class['name'] }}</b>
+                        <div>Группа {{ class['group_name'] }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5"></h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-bs-dismiss="modal"
+                    id="modal-button-save"
+                    {% if int(request.values.get('teacher_id', session['user']['id_teacher'])) != int(session['user']['id_teacher']) %}
+                        disabled
+                    {% endif %}>
+                    Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+const buttonPrev = document.querySelector('#prev');
+const buttonToday = document.querySelector('#today');
+const buttonNext = document.querySelector('#next');
+const teacherSelect = document.querySelector('#teacher-select');
+
+const modal = new bootstrap.Modal('#modal');
+const modalBody = document.querySelector('#modal .modal-body');
+const modalTitle = document.querySelector('#modal .modal-title');
+const modalButtonSave = document.querySelector('#modal-button-save');
+
+const classes = document.querySelectorAll('.class');
+
+modalButtonSave.addEventListener('click', function () {
+    const attendanceIds = Array.from(
+        document.querySelectorAll('#modal .student-row')
+    ).map(row => {
+        const id = row.id;
+        const checked = row.querySelector('input[type="checkbox"]').checked;
+        return { id, checked };
+    });
+    fetch('/check_attendance', {
+        method: 'POST',
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(attendanceIds),
+    })
+});
+
+function addTextToModal(content) {
+    div = document.createElement('div');
+    div.innerText = content;
+    modalBody.append(div);
+}
+
+function createRow(id, additionalClasses = [], children = []) {
+    const row = document.createElement('div');
+    row.classList.add('row');
+    row.id = id;
+    for (const additionalClass of additionalClasses) {
+        row.classList.add(additionalClass);
+    }
+    for (const child of children) {
+        row.append(child);
+    }
+    return row;
+}
+
+function createCol(content, additionalClasses = [], children = []) {
+    const col = document.createElement('div');
+    col.classList.add('col');
+    for (const additionalClass of additionalClasses) {
+        col.classList.add(additionalClass);
+    }
+    col.innerText = content;
+    for (const child of children) {
+        col.append(child);
+    }
+    return col;
+}
+
+for (const _class of classes) {
+    _class.addEventListener('click', function () {
+        fetch(`/schedule/${this.id}`).then(response => {
+            response.json().then(result => {
+                modalBody.innerText = '';
+                modalTitle.innerText = result.class.name;
+                addTextToModal(`Дисциплина: ${result.class.name}`);
+                addTextToModal(`Аудитория: ${result.class.room}`);
+                addTextToModal(`Преподаватель: ${result.class.FIO_teacher}`);
+                addTextToModal(`Группа: ${result.class.group_name}`);
+                const date = result.class.date.split(' ')[0].split('-').reverse().join('.');
+                addTextToModal(`Дата: ${date}`);
+                const time = result.class.date.split(' ')[1].split(':').splice(0, 2).join(':');
+                addTextToModal(`Время: ${time}`);
+
+                const headerCols = [];
+                headerCols.push(createCol('Студент', ['col-6', 'bold', 'px-0', 'py-2']));
+                headerCols.push(createCol('Телефон', ['col-4', 'bold', 'px-0', 'py-2']));
+                headerCols.push(createCol('Посещение', ['col-2', 'bold', 'py-2', 'd-flex', 'justify-content-end']));
+                const headerRow = createRow(0, ['mt-3', 'border-bottom'], headerCols);
+                modalBody.append(headerRow);
+
+                for (const student of result.students) {
+                    const cols = [];
+                    cols.push(createCol(student.FIO_student, ['col-6', 'px-0', 'py-2']));
+                    cols.push(createCol(student.telnumber_student, ['col-4', 'px-0', 'py-2']));
+                    const checkbox = document.createElement('input');
+                    checkbox.setAttribute('type', 'checkbox');
+                    checkbox.classList.add('form-check-input')
+                    checkbox.checked = Boolean(student.presence);
+                    cols.push(createCol('', ['col-2', 'py-2', 'd-flex', 'justify-content-end'], [checkbox]));
+                    const row = createRow(student.attendance_id, ['border-bottom', 'student-row'], cols);
+                    modalBody.append(row);
+                }
+
+                modal.show();
+            })
+        })
+    });
+}
+
+function getDateString(date) {
+    return date.toLocaleString().split(',')[0].split('.').reverse().join('-');
+}
+
+function addDays(days, date) {
+    date.setDate(date.getDate() + days);
+    return date;
+}
+
+buttonToday.addEventListener('click', function () {
+    pushQueryParams({ date: undefined })
+});
+
+buttonPrev.addEventListener('click', function () {
+    const params = new URLSearchParams(window.location.search);
+    let date = new Date();
+    if (params.get('date')) {
+        date = new Date(params.get('date'));
+    }
+    pushQueryParams({ date: getDateString(addDays(-7, date)) });
+});
+
+buttonNext.addEventListener('click', function () {
+    const params = new URLSearchParams(window.location.search);
+    let date = new Date();
+    if (params.get('date')) {
+        date = new Date(params.get('date'));
+    }
+    pushQueryParams({ date: getDateString(addDays(7, date)) });
+});
+
+teacherSelect.addEventListener('change', function () {
+    pushQueryParams({ teacher_id: this.value })
+});
+{% endblock %}
+
+{% block style %}
+.border-bottom {
+    border-bottom: 1px solid lightgray;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.class, .class > * {
+    transition: all 250ms ease;
+}
+
+.class:hover {
+    cursor: pointer;
+    border-color: var(--bs-blue);
+}
+
+.class:hover > .card-header {
+    background-color: var(--bs-blue);
+    color: white;
+}
+
+.row {
+    margin-left: 0;
+}
+
+.schedule-header {
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
+.class {
+    overflow: hidden;
+    font-size: 11pt;
+}
+
+.schedule-table .col,
+.schedule-header .col {
+    border-left: 1px solid lightgray;
+}
+
+.card-body {
+    word-break: break-word;
+}
+
+html, body, .content, .schedule-table {
+    height: 100%;
+}
+
+html, body, .content {
+    width: 99.3vw;
+}
+{% endblock %}

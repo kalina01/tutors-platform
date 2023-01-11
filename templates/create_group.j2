@@ -1,0 +1,32 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Создать группу
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4 d-flex">
+        <h4>Создать группу</h4>
+        <a href="/groups" class="btn btn-secondary ms-auto">Назад</a>
+    </div>
+
+    <form method="post" class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="group-name">Название</label>
+                <input name="group_name" id="group-name" class="form-control" required>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+{% endblock %}
+
+{% block style %}
+{% endblock %}

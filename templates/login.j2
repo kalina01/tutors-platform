@@ -1,0 +1,32 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Логин
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <div>
+                    <label for="tel">Телефон</label>
+                </div>
+                <input id="tel" class="mb-3 form-control" required name="tel">
+                <div>
+                    <label for="password">Пароль</label>
+                </div>
+                <input type="password" id="password" class="mb-3 form-control" required name="password">
+                {% if message %}
+                <div class="small text-danger mb-3">
+                    {{ message }}
+                </div>
+                {% endif %}
+                <div>
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

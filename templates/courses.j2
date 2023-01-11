@@ -1,0 +1,63 @@
+{% extends '_base.j2' %}
+
+{% block title %}
+Курсы
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex">
+        <h4>Курсы</h4>
+        <a href='/courses/create' class="btn btn-success ms-auto" id="add-teacher-button">
+            Создать курс
+        </a>
+    </div>
+    <div class="row">
+    {% for course in courses %}
+        <div class="col col-lg-4 col-md-6 col-12">
+            <div class="card mt-3">
+                <h5 class="card-header">{{ course.name }}</h5>
+                <div class="card-body">
+                    <div class="card-text">
+                        Преподаватель:
+                        <b>{{ course.FIO_teacher }}</b>
+                    </div>
+                    <div class="card-text">
+                        Начало
+                        <b>{{ strptime(course.start_date, '%Y-%m-%d').strftime('%d.%m.%Y') }}</b>
+                    </div>
+                    <div class="card-text">
+                        Группы: <b>{{ ', '.join(course.groups.split(',')) }}</b>
+                    </div>
+                    <div class="card-text">
+                        Количество занятий: <b>{{ course.lesson_amount }}</b>
+                    </div>
+                    <div class="card-text">
+                        Аудитория: <b>{{ course.room }}</b>
+                    </div>
+                    <div class="card-text">
+                        Дни недели:
+                        <b>
+                            {% set days_list = course.days_of_week.split(',') %}
+                            {% for idx, num_day in enumerate(days_list) %}
+                                {% if idx + 1 == len(days_list) %}
+                                    {{ day_abbr[int(num_day)] }}
+                                {% else %}
+                                    {{ day_abbr[int(num_day)] }},
+                                {% endif %}
+                            {% endfor %}
+                        </b>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{% endblock %}
+
+{% block style %}
+{% endblock %}
